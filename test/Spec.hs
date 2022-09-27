@@ -8,6 +8,7 @@ module Main where
 
 import qualified Redis.ActualSpec as Actual
 import qualified Redis.MemSpec as Mem
+import qualified Redis.UsageSpec as Usage
 import System.IO (
   BufferMode (..),
   hSetBuffering,
@@ -24,3 +25,4 @@ main = do
   hspec $ do
     Actual.spec
     Mem.spec
+    Usage.spec
