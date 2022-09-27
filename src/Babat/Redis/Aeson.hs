@@ -1,3 +1,6 @@
+{-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_HADDOCK prune not-home #-}
+
 {- |
 Copyright   : (c) 2018-2022 Tim Emiola
 SPDX-License-Identifier: BSD3
@@ -9,7 +12,15 @@ dictionary service
 module Babat.Redis.Aeson (
   -- * decode/encode support
   decodeOr,
+  decodeOr',
+  decodeOrBad,
+  decodeOrBad',
   jsonValue,
+  jsonKey,
+  webKey,
+  appendWebKey,
+  substWebKey,
+  prependWebKey,
 
   -- * decode dictionaries
   decodeJsonKeyDict,
@@ -30,6 +41,8 @@ import Data.Aeson (
   encode,
  )
 import Data.Bifunctor (bimap)
+import Data.ByteString (ByteString)
+import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as LBS
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
@@ -41,6 +54,58 @@ import Web.HttpApiData (FromHttpApiData (..), ToHttpApiData (..))
 -- | Encode JSON as a remote value.
 jsonValue :: ToJSON a => a -> RemoteValue
 jsonValue = viaToJSON
+
+
+webKey :: ToHttpApiData a => a -> RemoteKey
+webKey = toHeader
+
+
+substWebKey :: ToHttpApiData a => a -> RemoteKey -> RemoteKey
+substWebKey x template =
+  let (prefix, afterPre) = B.breakSubstring mustache template
+      suffix = B.drop (B.length mustache) afterPre
+      result = prefix <> webKey x <> suffix
+   in if B.isPrefixOf mustache afterPre then result else template
+
+
+appendWebKey :: ToHttpApiData a => RemoteKey -> a -> RemoteKey -> RemoteKey
+appendWebKey sep x template = template <> sep <> webKey x
+
+
+prependWebKey :: ToHttpApiData a => RemoteKey -> a -> RemoteKey -> RemoteKey
+prependWebKey sep x template = webKey x <> sep <> template
+
+
+mustache :: ByteString
+mustache = "{}"
+
+
+jsonKey :: ToJSON a => a -> RemoteKey
+jsonKey = viaToJSON
+
+
+decodeOrBad ::
+  FromJSON b =>
+  Maybe RemoteValue ->
+  Either HTSException b
+decodeOrBad x =
+  case decodeOr NotDecoded x of
+    Left err -> Left err
+    Right mb -> maybe (Left BadValue) Right mb
+
+
+decodeOrBad' ::
+  FromJSON b =>
+  Either HTSException (Maybe RemoteValue) ->
+  Either HTSException b
+decodeOrBad' = either Left decodeOrBad
+
+
+decodeOr' ::
+  FromJSON b =>
+  Either HTSException (Maybe RemoteValue) ->
+  Either HTSException (Maybe b)
+decodeOr' = either Left (decodeOr NotDecoded)
 
 
 -- | Decode a remote JSON  value, lifting decoding errors into a custom error type.

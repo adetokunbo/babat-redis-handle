@@ -51,7 +51,9 @@ data Handle m = Handle
 data HTSException
   = ConnectionClosed
   | Unanticipated Text
+  | NotDecoded Text
   | BadValue
+  | Gone RemoteKey
   deriving (Eq, Show)
 
 

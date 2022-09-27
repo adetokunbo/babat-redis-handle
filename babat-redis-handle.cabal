@@ -25,6 +25,7 @@ library
                        Babat.Redis.FromEnv
                        Babat.Redis.Mem
                        Babat.Redis.Types
+                       Babat.Redis.Catalog
                        Babat.Redis
 
   build-depends:       base                 >= 4.11 && <5.0
@@ -50,6 +51,7 @@ test-suite test-specs
   other-modules:    Redis.CheckHandle
                     Redis.MemSpec
                     Redis.ActualSpec
+                    Redis.UsageSpec
   hs-source-dirs:   test
   build-depends:    base
                   , QuickCheck
