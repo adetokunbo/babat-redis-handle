@@ -211,10 +211,10 @@ modWholeDict' ::
   , Ord (Inner a)
   ) =>
   (Map (Inner a) a -> Map (Inner a) a) ->
-  Outer a ->
   Handle m ->
+  Outer a ->
   m (Either HTSException ())
-modWholeDict' modDict outPart h = do
+modWholeDict' modDict h outPart = do
   let key = outerKeyOf @a Proxy outPart $ dictPath @a Proxy
   hLoadDict h key >>= \case
     Left err -> pure $ Left err
