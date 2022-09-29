@@ -13,8 +13,8 @@ module Babat.Redis.Aeson (
   -- * decode/encode support
   decodeOr,
   decodeOr',
-  decodeOrBad,
-  decodeOrBad',
+  decodeOrGone,
+  decodeOrGone',
   jsonValue,
   jsonKey,
   webKey,
@@ -84,21 +84,23 @@ jsonKey :: ToJSON a => a -> RemoteKey
 jsonKey = viaToJSON
 
 
-decodeOrBad ::
+decodeOrGone ::
   FromJSON b =>
+  RemoteKey ->
   Maybe RemoteValue ->
   Either HTSException b
-decodeOrBad x =
+decodeOrGone key x =
   case decodeOr NotDecoded x of
     Left err -> Left err
-    Right mb -> maybe (Left BadValue) Right mb
+    Right mb -> maybe (Left $ Gone key) Right mb
 
 
-decodeOrBad' ::
+decodeOrGone' ::
   FromJSON b =>
+  RemoteKey ->
   Either HTSException (Maybe RemoteValue) ->
   Either HTSException b
-decodeOrBad' = either Left decodeOrBad
+decodeOrGone' key = either Left $ decodeOrGone key
 
 
 decodeOr' ::

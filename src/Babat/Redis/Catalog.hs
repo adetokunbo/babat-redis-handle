@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -35,7 +36,7 @@ module Babat.Redis.Catalog (
 
 import Babat.Redis.Aeson (
   decodeOr',
-  decodeOrBad',
+  decodeOrGone',
   decodeWebKeyDict,
   jsonValue,
   saveWebKeyDict,
@@ -72,7 +73,8 @@ fetchDictValue ::
 fetchDictValue h key =
   let outer = dictPath @a Proxy
       inner = keyOf @a Proxy key
-   in hLoadDictValue h outer inner <&> decodeOrBad'
+      full = outer <> "//" <> inner
+   in hLoadDictValue h outer inner <&> decodeOrGone' full
 
 
 mayFetchDictValue ::
@@ -158,7 +160,8 @@ fetchDictValue' ::
 fetchDictValue' h outPart key =
   let outer = outerKeyOf @a Proxy outPart $ dictPath @a Proxy
       inner = keyOf @a Proxy key
-   in hLoadDictValue h outer inner <&> decodeOrBad'
+      full = outer <> "//" <> inner
+   in hLoadDictValue h outer inner <&> decodeOrGone' full
 
 
 mayFetchDictValue' ::
