@@ -81,7 +81,7 @@ hLoadValue' ::
   m (Either HTSException (Maybe RemoteValue))
 hLoadValue' var key = withFakeHashKey var key $ \case
   Nothing -> pure $ Right Nothing
-  Just (Dict _) -> pure $ Left BadValue
+  Just (Dict _) -> pure $ Left BadKey
   Just (Simple v) -> pure $ Right $ Just v
 
 
@@ -103,7 +103,7 @@ hLoadDict' ::
 hLoadDict' var key = withFakeHashKey var key $ \case
   Nothing -> pure $ Right Map.empty
   Just (Dict v) -> pure $ Right v
-  Just (Simple _) -> pure $ Left BadValue
+  Just (Simple _) -> pure $ Left BadKey
 
 
 hSaveDict' ::
@@ -135,7 +135,7 @@ hSaveDictValue' var key dictKey value = withFakeHash' var $ \values ->
       updateFakeHash var $ Map.insert key (Dict $ Map.singleton dictKey value) values
     Just (Dict d) -> do
       updateFakeHash var $ Map.insert key (Dict $ Map.insert dictKey value d) values
-    Just (Simple _) -> pure $ Left BadValue
+    Just (Simple _) -> pure $ Left BadKey
 
 
 hLoadDictValue' ::
@@ -147,7 +147,7 @@ hLoadDictValue' ::
 hLoadDictValue' var key dictKey = withFakeHashKey var key $ \case
   Nothing -> pure $ Right Nothing
   Just (Dict d) -> pure $ Right $ Map.lookup dictKey d
-  Just (Simple _) -> pure $ Left BadValue
+  Just (Simple _) -> pure $ Left BadKey
 
 
 hDeleteDictKeys' ::
@@ -163,7 +163,7 @@ hDeleteDictKeys' var key dictKeys = withFakeHash' var $ \values ->
       let pred' = \k _ -> k `notElem` dictKeys
       writeTVar var (Map.insert key (Dict (Map.filterWithKey pred' d)) values, False)
       pure $ Right ()
-    Just (Simple _) -> pure $ Left BadValue
+    Just (Simple _) -> pure $ Left BadKey
 
 
 hDeleteKeys' ::

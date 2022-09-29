@@ -31,9 +31,11 @@ module Babat.Redis.Actual (
 import Babat.Redis.Types
 import Control.Exception (throwIO)
 import Control.Monad.IO.Unlift (MonadIO, MonadUnliftIO, liftIO)
+import qualified Data.ByteString as B
 import Data.Functor ((<&>))
 import qualified Data.Map.Strict as Map
 import qualified Data.Text as Text
+import Data.Text.Encoding (decodeUtf8)
 import Database.Redis (
   ConnectInfo (..),
   Connection,
@@ -71,6 +73,7 @@ parseConfig expiry maxConns l = do
   parseLocator maxConns l >>= \case
     Nothing -> pure Nothing
     Just info -> pure $ Just $ Config expiry info
+
 
 invalidLocator :: String -> IO a
 invalidLocator x = throwIO $ userError $ "REDIS connection url: " ++ x ++ " is invalid"
@@ -223,7 +226,9 @@ fallbackMaxConns = 10
 
 
 toHTSException :: Reply -> HTSException
-toHTSException = Unanticipated . Text.pack . show
+toHTSException (Error e) | B.isPrefixOf "WRONGTYPE" e = BadKey
+toHTSException (Error e) = Unanticipated $ decodeUtf8 e
+toHTSException r = Unanticipated $ Text.pack $ show r
 
 
 doStore ::

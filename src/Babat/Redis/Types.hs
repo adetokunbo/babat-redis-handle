@@ -52,7 +52,7 @@ data HTSException
   = ConnectionClosed
   | Unanticipated Text
   | NotDecoded Text
-  | BadValue
+  | BadKey
   | Gone RemoteKey
   deriving (Eq, Show)
 
