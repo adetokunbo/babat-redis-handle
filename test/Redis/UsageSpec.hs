@@ -18,6 +18,7 @@ module Redis.UsageSpec (spec) where
 import Babat.Redis.Aeson
 import Babat.Redis.Catalog
 import Babat.Redis.Mem
+import Control.Monad.IO.Class (MonadIO)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Data.Text (Text)
@@ -82,19 +83,19 @@ instance OuterKeyOf RStatus where
   outerKeyOf _ = substWebKey
 
 
-saveRStatus :: Handle IO -> CourseCode -> EnrolleeId -> RStatus -> IO (Either HTSException ())
+saveRStatus :: MonadIO m => Handle m -> CourseCode -> EnrolleeId -> RStatus -> m (Either HTSException ())
 saveRStatus = saveDictValue'
 
 
-fetchRStatus :: Handle IO -> CourseCode -> EnrolleeId -> IO (Either HTSException RStatus)
+fetchRStatus :: MonadIO m => Handle m -> CourseCode -> EnrolleeId -> m (Either HTSException RStatus)
 fetchRStatus = fetchDictValue'
 
 
-fetchRStatus' :: Handle IO -> CourseCode -> EnrolleeId -> IO (Either HTSException (Maybe RStatus))
+fetchRStatus' :: MonadIO m => Handle m -> CourseCode -> EnrolleeId -> m (Either HTSException (Maybe RStatus))
 fetchRStatus' = mayFetchDictValue'
 
 
-enroll :: Handle IO -> CourseCode -> EnrolleeId -> IO (Either HTSException ())
+enroll :: MonadIO m => Handle m -> CourseCode -> EnrolleeId -> m (Either HTSException ())
 enroll h code anId = do
   fetchRStatus' h code anId >>= \case
     Left err -> pure $ Left err
@@ -116,14 +117,14 @@ instance OuterKeyOf CourseCode where
   outerKeyOf _ = substWebKey
 
 
-addACourse :: CourseCode -> Handle IO -> EnrolleeId -> IO (Either HTSException ())
+addACourse :: MonadIO m => CourseCode -> Handle m -> EnrolleeId -> m (Either HTSException ())
 addACourse = modWholeDict' . registerCourse
 
 
 type EnrolleeCourses = Map Natural CourseCode
 
 
-fetchCourses :: Handle IO -> EnrolleeId -> IO (Either HTSException EnrolleeCourses)
+fetchCourses :: MonadIO m => Handle m -> EnrolleeId -> m (Either HTSException EnrolleeCourses)
 fetchCourses = fetchWholeDict'
 
 
