@@ -33,6 +33,7 @@ module Redis.CheckHandle (
 import Babat.Redis.Mem
 import Control.Exception (throwIO)
 import qualified Data.Map.Strict as Map
+import Numeric.Natural (Natural)
 import Test.Hspec
 
 
@@ -56,14 +57,20 @@ checkHandle = do
     it "should load ok" $ \f -> do
       hLoadDict (fHandle f) mKey1 `endsRight` d1
 
+    checkLength mKey1 4
+
     it "should update an indexed value ok" $ \f -> do
       endsRight_ $ hSaveDictValue (fHandle f) mKey1 key1 "changed"
       mKey1Of f key1 `endsRight` Just "changed"
+
+    checkLength mKey1 4
 
     it "should add an indexed value ok" $ \f -> do
       mKey1Of f "foo" `endsRight` Nothing
       endsRight_ $ hSaveDictValue (fHandle f) mKey1 "foo" "bar"
       mKey1Of f "foo" `endsRight` Just "bar"
+
+    checkLength mKey1 5
 
     it "should delete indexed values ok" $ \f -> do
       endsRight_ $ hDeleteDictKeys (fHandle f) mKey1 [key1, key2]
@@ -71,10 +78,20 @@ checkHandle = do
       mKey1Of f key1 `endsRight` Nothing
       mKey1Of f key2 `endsRight` Nothing
 
+    checkLength mKey1 3
+
     it "should delete ok" $ \f -> do
       endsRight_ $ hDeleteKeys (fHandle f) [mKey1]
       hLoadDict (fHandle f) mKey1 `endsRight` Map.empty
       mKey1Of f "foo" `endsRight` Nothing
+
+    checkLength mKey1 0
+
+
+checkLength :: RemoteKey -> Natural -> SpecWith (Fixture a)
+checkLength aKey n = context "and the reported length" $ do
+  it "should be correct " $ \f -> do
+    hLengthDict (fHandle f) aKey `endsRight` n
 
 
 data Fixture a = Fixture

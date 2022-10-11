@@ -29,6 +29,7 @@ module Babat.Redis.Types (
 import Data.ByteString (ByteString)
 import Data.Map.Strict (Map)
 import Data.Text (Text)
+import Numeric.Natural (Natural)
 import UnliftIO.Exception (Exception)
 
 
@@ -43,6 +44,7 @@ data Handle m = Handle
   , hDeleteKeys :: !(DeleteKeys m)
   , hDeleteDictKeys :: !(DeleteDictKeys m)
   , hDeleteMatchingKeys :: !(DeleteMatchingKeys m)
+  , hLengthDict :: !(RemoteKey -> m (Either HTSException Natural))
   , hClose :: !(m ())
   }
 
