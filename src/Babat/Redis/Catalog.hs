@@ -23,6 +23,7 @@ module Babat.Redis.Catalog (
   mayFetchDictValue,
   saveDictValue,
   saveWholeDict,
+  sizeOf,
 
   -- * @OuterKeyOf@ and related combinators
   OuterKeyOf (..),
@@ -32,6 +33,7 @@ module Babat.Redis.Catalog (
   modWholeDict',
   saveDictValue',
   saveWholeDict',
+  sizeOf',
 ) where
 
 import Babat.Redis.Aeson (
@@ -48,6 +50,7 @@ import Data.Functor ((<&>))
 import Data.Map.Strict (Map)
 import Data.Proxy (Proxy (Proxy))
 import GHC.TypeLits (KnownSymbol, Symbol, symbolVal)
+import Numeric.Natural
 import Web.HttpApiData (FromHttpApiData (..), ToHttpApiData (..))
 
 
@@ -150,6 +153,20 @@ fetchWholeDict h = do
     Right d -> pure $ decodeWebKeyDict NotDecoded d
 
 
+sizeOf ::
+  forall a m.
+  ( Monad m
+  , KeyOf a
+  , Ord (Inner a)
+  ) =>
+  Proxy a ->
+  Handle m ->
+  m (Either HTSException Natural)
+sizeOf _ h = do
+  let key = dictPath @a Proxy
+  hLengthDict h key
+
+
 fetchDictValue' ::
   forall a m.
   (Monad m, FromJSON a, OuterKeyOf a) =>
@@ -242,3 +259,18 @@ fetchWholeDict' h outPart = do
   hLoadDict h key >>= \case
     Left err -> pure $ Left err
     Right d -> pure $ decodeWebKeyDict NotDecoded d
+
+
+sizeOf' ::
+  forall a m.
+  ( Monad m
+  , OuterKeyOf a
+  , Ord (Inner a)
+  ) =>
+  Proxy a ->
+  Handle m ->
+  Outer a ->
+  m (Either HTSException Natural)
+sizeOf' _ h outPart = do
+  let key = outerKeyOf @a Proxy outPart $ dictPath @a Proxy
+  hLengthDict h key
