@@ -49,6 +49,7 @@ import Database.Redis (
   hdel,
   hget,
   hgetall,
+  hlen,
   hmset,
   hset,
   keys,
@@ -56,6 +57,7 @@ import Database.Redis (
   runRedis,
   setex,
  )
+import Numeric.Natural (Natural)
 
 
 -- | Obtain a @ConnectInfo@ from a Redis Url and max connections
@@ -104,6 +106,7 @@ new config = do
       , hDeleteKeys = hDeleteKeys' conn
       , hDeleteDictKeys = hDeleteDictKeys' conn
       , hDeleteMatchingKeys = hDeleteMatchingKeys' conn
+      , hLengthDict = hLengthDict' conn
       }
 
 
@@ -112,7 +115,7 @@ new config = do
 When REDIS_URL has this value, use of the internal implementation is forced.
 -}
 disabledRedisUrl :: String
-disabledRedisUrl = "redis://redis-is-disabled"
+disabledRedisUrl = "redis://use-the-fake"
 
 
 data InnerHandle = InnerHandle
@@ -160,6 +163,14 @@ hLoadDict' ::
   RemoteKey ->
   m (Either HTSException RemoteDict)
 hLoadDict' conn key = doFetch conn $ hgetall key <&> fmap Map.fromList
+
+
+hLengthDict' ::
+  MonadUnliftIO m =>
+  Connection ->
+  RemoteKey ->
+  m (Either HTSException Natural)
+hLengthDict' conn key = doFetch conn $ hlen key <&> fmap (fromInteger . toInteger)
 
 
 hSaveDictValue' ::

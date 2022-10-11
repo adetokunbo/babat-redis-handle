@@ -3,6 +3,10 @@
 `babat-redis-handle` uses [PVP Versioning][2]
 The format of this file is based on [Keep a Changelog][1]
 
+## [0.6.1.0] -- 2022-10-11
+
+* Add a function to measure dictionary length
+
 ## [0,6.0.0] -- 2022-09-14
 
 * Remove the Babat.Redis.Pile module and prepare for open source release

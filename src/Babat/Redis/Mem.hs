@@ -22,6 +22,7 @@ import Babat.Redis.Types
 import Control.Monad.IO.Unlift (MonadIO, MonadUnliftIO, liftIO)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
+import Numeric.Natural
 import UnliftIO.STM (
   STM,
   TVar,
@@ -47,6 +48,7 @@ new = do
       , hDeleteKeys = hDeleteKeys' v
       , hDeleteDictKeys = hDeleteDictKeys' v
       , hDeleteMatchingKeys = hDeleteMatchingKeys' v
+      , hLengthDict = hLengthDict' v
       , hClose = hClose' v
       }
 
@@ -103,6 +105,17 @@ hLoadDict' ::
 hLoadDict' var key = withFakeHashKey var key $ \case
   Nothing -> pure $ Right Map.empty
   Just (Dict v) -> pure $ Right v
+  Just (Simple _) -> pure $ Left BadKey
+
+
+hLengthDict' ::
+  MonadUnliftIO m =>
+  FakeHashVar ->
+  RemoteKey ->
+  m (Either HTSException Natural)
+hLengthDict' var key = withFakeHashKey var key $ \case
+  Nothing -> pure $ Right 0
+  Just (Dict v) -> pure $ Right $ fromInteger $ toInteger $ Map.size v
   Just (Simple _) -> pure $ Left BadKey
 
 
