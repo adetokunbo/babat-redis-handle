@@ -19,20 +19,24 @@ module Babat.Redis.Catalog (
   KeyOf (..),
   fetchDictValue,
   fetchWholeDict,
+  fetchPartOfDict,
   modWholeDict,
   mayFetchDictValue,
   saveDictValue,
   saveWholeDict,
+  savePartOfDict,
   sizeOf,
 
   -- * @OuterKeyOf@ and related combinators
   OuterKeyOf (..),
   fetchDictValue',
   fetchWholeDict',
+  fetchPartOfDict',
   mayFetchDictValue',
   modWholeDict',
   saveDictValue',
   saveWholeDict',
+  savePartOfDict',
   sizeOf',
 ) where
 
@@ -42,6 +46,7 @@ import Babat.Redis.Aeson (
   decodeWebKeyDict,
   jsonValue,
   saveWebKeyDict,
+  updateWebKeyDict,
  )
 import Babat.Redis.Types (HTSException (..), Handle (..), RemoteKey)
 import Data.Aeson (FromJSON, ToJSON)
@@ -105,6 +110,15 @@ saveDictValue h key aDict =
    in hSaveDictValue h outer inner $ jsonValue aDict
 
 
+savePartOfDict ::
+  forall a m.
+  (Monad m, ToJSON a, KeyOf a, ToHttpApiData (Inner a), Ord (Inner a)) =>
+  Handle m ->
+  Map (Inner a) a ->
+  m (Either HTSException ())
+savePartOfDict h = updateWebKeyDict id h (dictPath @a Proxy)
+
+
 saveWholeDict ::
   forall a m.
   (Monad m, ToJSON a, KeyOf a, ToHttpApiData (Inner a), Ord (Inner a)) =>
@@ -149,6 +163,24 @@ fetchWholeDict ::
 fetchWholeDict h = do
   let key = dictPath @a Proxy
   hLoadDict h key >>= \case
+    Left err -> pure $ Left err
+    Right d -> pure $ decodeWebKeyDict NotDecoded d
+
+
+fetchPartOfDict ::
+  forall a m.
+  ( Monad m
+  , FromJSON a
+  , KeyOf a
+  , FromHttpApiData (Inner a)
+  , Ord (Inner a)
+  ) =>
+  Handle m ->
+  [Inner a] ->
+  m (Either HTSException (Map (Inner a) a))
+fetchPartOfDict h keys = do
+  let key = dictPath @a Proxy
+  hLoadDictPart h key (map (keyOf @a Proxy) keys) >>= \case
     Left err -> pure $ Left err
     Right d -> pure $ decodeWebKeyDict NotDecoded d
 
@@ -208,6 +240,18 @@ saveDictValue' h outPart key aDict =
    in hSaveDictValue h outer inner $ jsonValue aDict
 
 
+savePartOfDict' ::
+  forall a m.
+  (Monad m, ToJSON a, OuterKeyOf a, ToHttpApiData (Inner a), Ord (Inner a)) =>
+  Handle m ->
+  Outer a ->
+  Map (Inner a) a ->
+  m (Either HTSException ())
+savePartOfDict' h outPart =
+  let outer = outerKeyOf @a Proxy outPart $ dictPath @a Proxy
+   in updateWebKeyDict id h outer
+
+
 saveWholeDict' ::
   forall a m.
   (Monad m, ToJSON a, OuterKeyOf a, ToHttpApiData (Inner a), Ord (Inner a)) =>
@@ -257,6 +301,25 @@ fetchWholeDict' ::
 fetchWholeDict' h outPart = do
   let key = outerKeyOf @a Proxy outPart $ dictPath @a Proxy
   hLoadDict h key >>= \case
+    Left err -> pure $ Left err
+    Right d -> pure $ decodeWebKeyDict NotDecoded d
+
+
+fetchPartOfDict' ::
+  forall a m.
+  ( Monad m
+  , FromJSON a
+  , OuterKeyOf a
+  , FromHttpApiData (Inner a)
+  , Ord (Inner a)
+  ) =>
+  Handle m ->
+  Outer a ->
+  [Inner a] ->
+  m (Either HTSException (Map (Inner a) a))
+fetchPartOfDict' h outPart keys = do
+  let key = outerKeyOf @a Proxy outPart $ dictPath @a Proxy
+  hLoadDictPart h key (map (keyOf @a Proxy) keys) >>= \case
     Left err -> pure $ Left err
     Right d -> pure $ decodeWebKeyDict NotDecoded d
 

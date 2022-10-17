@@ -31,6 +31,7 @@ module Babat.Redis.Aeson (
   saveDict',
   saveJsonKeyDict,
   saveWebKeyDict,
+  updateWebKeyDict,
 ) where
 
 import Babat.Redis.Types
@@ -192,6 +193,20 @@ saveWebKeyDict ::
 saveWebKeyDict f = saveDict f toHeader
 
 
+{- | Update a remote dictionary that serializes as JSON.
+
+The key deserializes as @HttpApiData@ the value deserializes as JSON.
+-}
+updateWebKeyDict ::
+  (Ord a, ToHttpApiData a, ToJSON b, Monad m) =>
+  (HTSException -> err) ->
+  Handle m ->
+  RemoteKey ->
+  Map a b ->
+  m (Either err ())
+updateWebKeyDict f = saveOrUpdateDict True f toHeader
+
+
 {- | Encode a remote dictionary with values serialized as JSON.
 
 The key is serialized using the provided function,
@@ -208,13 +223,7 @@ saveDict ::
   RemoteKey ->
   Map a b ->
   m (Either err ())
-saveDict _ _ _ _ dict | Map.size dict == 0 = pure $ Right ()
-saveDict toErr fromKey h key dict =
-  let asRemote =
-        Map.fromList
-          . fmap (bimap fromKey viaToJSON)
-          . Map.toList
-   in fmap (firstEither toErr) $ hSaveDict h key $ asRemote dict
+saveDict = saveOrUpdateDict False
 
 
 {- | Encode a remote dictionary with values serialized as JSON.
@@ -230,6 +239,34 @@ saveDict' ::
   Map a b ->
   m (Either HTSException ())
 saveDict' = saveDict id
+
+
+{- | Encode a remote dictionary with values serialized as JSON.
+
+The key is serialized using the provided function,
+
+The value type is serialized as JSON.
+
+'HTSException' are lifted to another error type
+-}
+saveOrUpdateDict ::
+  (Ord a, ToJSON b, Monad m) =>
+  -- | when @True@, the dict is updated
+  Bool ->
+  (HTSException -> err) ->
+  (a -> RemoteValue) ->
+  Handle m ->
+  RemoteKey ->
+  Map a b ->
+  m (Either err ())
+saveOrUpdateDict _ _ _ _ _ dict | Map.size dict == 0 = pure $ Right ()
+saveOrUpdateDict update toErr fromKey h key dict =
+  let asRemote =
+        Map.fromList
+          . fmap (bimap fromKey viaToJSON)
+          . Map.toList
+      saver = if update then hSaveDictPart else hSaveDict
+   in fmap (firstEither toErr) $ saver h key $ asRemote dict
 
 
 firstEither :: (err1 -> err2) -> Either err1 b -> Either err2 b
