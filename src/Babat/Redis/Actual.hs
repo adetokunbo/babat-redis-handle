@@ -1,5 +1,4 @@
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_HADDOCK prune not-home #-}
 
@@ -34,6 +33,7 @@ import Control.Monad.IO.Unlift (MonadIO, MonadUnliftIO, liftIO)
 import qualified Data.ByteString as B
 import Data.Functor ((<&>))
 import qualified Data.Map.Strict as Map
+import Data.Maybe (mapMaybe)
 import qualified Data.Text as Text
 import Data.Text.Encoding (decodeUtf8)
 import Database.Redis (
@@ -50,6 +50,7 @@ import Database.Redis (
   hget,
   hgetall,
   hlen,
+  hmget,
   hmset,
   hset,
   keys,
@@ -101,7 +102,9 @@ new config = do
       , hSaveValue = hSaveValue' inner
       , hLoadDict = hLoadDict' conn
       , hSaveDict = hSaveDict' inner
+      , hSaveDictPart = hSaveDictPart' inner
       , hLoadDictValue = hLoadDictValue' conn
+      , hLoadDictPart = hLoadDictPart' conn
       , hSaveDictValue = hSaveDictValue' inner
       , hDeleteKeys = hDeleteKeys' conn
       , hDeleteDictKeys = hDeleteDictKeys' conn
@@ -165,6 +168,21 @@ hLoadDict' ::
 hLoadDict' conn key = doFetch conn $ hgetall key <&> fmap Map.fromList
 
 
+hLoadDictPart' ::
+  MonadUnliftIO m =>
+  Connection ->
+  RemoteKey ->
+  [RemoteKey] ->
+  m (Either HTSException RemoteDict)
+hLoadDictPart' conn key dictKeys = do
+  doFetch conn (hmget key dictKeys) >>= \case
+    Left err -> pure $ Left err
+    Right fetched -> do
+      let pairedMaybes = zip dictKeys fetched
+          mbOf (x, mbY) = mbY >>= \y -> Just (x, y)
+      pure $ Right $ Map.fromList $ mapMaybe mbOf pairedMaybes
+
+
 hLengthDict' ::
   MonadUnliftIO m =>
   Connection ->
@@ -192,7 +210,16 @@ hSaveDict' ::
   m (Either HTSException ())
 hSaveDict' ih key dict = do
   _ <- hDeleteKeys' (ihConnection ih) [key]
-  doStore' (ihConnection ih) $ hmset key $ Map.toList dict
+  hSaveDictPart' ih key dict
+
+
+hSaveDictPart' ::
+  MonadUnliftIO m =>
+  InnerHandle ->
+  RemoteKey ->
+  RemoteDict ->
+  m (Either HTSException ())
+hSaveDictPart' ih key dict = doStore' (ihConnection ih) $ hmset key $ Map.toList dict
 
 
 hDeleteKeys' ::
