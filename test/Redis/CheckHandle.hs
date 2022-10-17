@@ -80,6 +80,16 @@ checkHandle = do
 
     checkLength mKey1 3
 
+    it "should update the indexed values using a dict ok" $ \f -> do
+      endsRight_ $ hSaveDictPart (fHandle f) mKey1 d2
+      mKey1Of f key1 `endsRight` Just simple3
+      mKey1Of f key2 `endsRight` Nothing
+      mKey1Of f key5 `endsRight` Just simple3
+
+    it "should fetch a subset of the indexed values as a dict ok" $ \f -> do
+      let want = Map.fromList [("foo", "bar"), (key5, simple3)]
+      hLoadDictPart (fHandle f) mKey1 ["foo", key5] `endsRight` want
+
     it "should delete ok" $ \f -> do
       endsRight_ $ hDeleteKeys (fHandle f) [mKey1]
       hLoadDict (fHandle f) mKey1 `endsRight` Map.empty
@@ -112,21 +122,24 @@ closeFixture f = do
   hClose $ fHandle f
 
 
-key1, key2, key3, key4, mKey1 :: RemoteKey
+key1, key2, key3, key4, key5, mKey1 :: RemoteKey
 key1 = "a-simple-key-1"
 key2 = "a-simple-key-2"
 key3 = "another-key-1"
 key4 = "another_key-2"
+key5 = "yet-another-key"
 mKey1 = "a-map-key-1"
 
 
-simple1, simple2 :: RemoteValue
+simple1, simple2, simple3 :: RemoteValue
 simple1 = "a-simple-value-1"
 simple2 = "a-simple-value-2"
+simple3 = "a-simple-value-3"
 
 
-d1 :: RemoteDict
+d1, d2 :: RemoteDict
 d1 = Map.fromList [(key1, simple1), (key2, simple2), (key3, simple1), (key4, simple2)]
+d2 = Map.fromList [(key1, simple3), (key5, simple3)]
 
 
 throwHTS :: HTSException -> IO ()

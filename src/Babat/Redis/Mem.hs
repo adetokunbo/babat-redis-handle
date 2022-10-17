@@ -22,7 +22,7 @@ import Babat.Redis.Types
 import Control.Monad.IO.Unlift (MonadIO, MonadUnliftIO, liftIO)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
-import Numeric.Natural
+import Numeric.Natural (Natural)
 import UnliftIO.STM (
   STM,
   TVar,
@@ -44,7 +44,9 @@ new = do
       , hLoadDict = hLoadDict' v
       , hSaveDict = hSaveDict' v
       , hLoadDictValue = hLoadDictValue' v
+      , hLoadDictPart = hLoadDictPart' v
       , hSaveDictValue = hSaveDictValue' v
+      , hSaveDictPart = hSaveDictPart' v
       , hDeleteKeys = hDeleteKeys' v
       , hDeleteDictKeys = hDeleteDictKeys' v
       , hDeleteMatchingKeys = hDeleteMatchingKeys' v
@@ -108,6 +110,18 @@ hLoadDict' var key = withFakeHashKey var key $ \case
   Just (Simple _) -> pure $ Left BadKey
 
 
+hLoadDictPart' ::
+  MonadUnliftIO m =>
+  FakeHashVar ->
+  RemoteKey ->
+  [RemoteKey] ->
+  m (Either HTSException RemoteDict)
+hLoadDictPart' var key dictKeys = withFakeHashKey var key $ \case
+  Nothing -> pure $ Right Map.empty
+  Just (Dict v) -> pure $ Right $ Map.filterWithKey (\k _ -> k `elem` dictKeys) v
+  Just (Simple _) -> pure $ Left BadKey
+
+
 hLengthDict' ::
   MonadUnliftIO m =>
   FakeHashVar ->
@@ -127,6 +141,21 @@ hSaveDict' ::
   m (Either HTSException ())
 hSaveDict' var key d = withFakeHash' var $ \values -> do
   updateFakeHash var $ Map.insert key (Dict d) values
+
+
+hSaveDictPart' ::
+  MonadUnliftIO m =>
+  FakeHashVar ->
+  RemoteKey ->
+  RemoteDict ->
+  m (Either HTSException ())
+hSaveDictPart' var key d = withFakeHash' var $ \values ->
+  case Map.lookup key values of
+    Nothing -> do
+      updateFakeHash var $ Map.insert key (Dict d) values
+    Just (Dict d') -> do
+      updateFakeHash var $ Map.insert key (Dict $ Map.union d d') values
+    Just (Simple _) -> pure $ Left BadKey
 
 
 updateFakeHash :: TVar (a, Bool) -> a -> STM (Either err ())
