@@ -90,6 +90,9 @@ checkHandle = do
       let want = Map.fromList [("foo", "bar"), (key5, simple3)]
       hLoadDictPart (fHandle f) mKey1 ["foo", key5] `endsRight` want
 
+    it "should fetch an empty subset of the indexed values if no subkeys are given" $ \f -> do
+      hLoadDictPart (fHandle f) mKey1 [] `endsRight` mempty
+
     it "should delete ok" $ \f -> do
       endsRight_ $ hDeleteKeys (fHandle f) [mKey1]
       hLoadDict (fHandle f) mKey1 `endsRight` Map.empty
