@@ -1,6 +1,6 @@
 cabal-version:       3.0
 name:                babat-redis-handle
-version:             0.6.3.0
+version:             0.6.3.1
 synopsis:            Provides a Handle for storing hash tables in Redis
 -- description:
 license:             BSD-3-Clause

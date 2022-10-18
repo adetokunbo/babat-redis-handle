@@ -3,6 +3,10 @@
 `babat-redis-handle` uses [PVP Versioning][2]
 The format of this file is based on [Keep a Changelog][1]
 
+## [0.6.3.1] -- 2022-10-19
+
+* bugfix: return mempty when no dict keys are specified
+
 ## [0.6.3.0] -- 2022-10-17
 
 * Save/Fetch parts of dictionaries

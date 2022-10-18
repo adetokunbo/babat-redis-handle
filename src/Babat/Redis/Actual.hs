@@ -174,6 +174,7 @@ hLoadDictPart' ::
   RemoteKey ->
   [RemoteKey] ->
   m (Either HTSException RemoteDict)
+hLoadDictPart' _conn _key [] = pure $ Right mempty
 hLoadDictPart' conn key dictKeys = do
   doFetch conn (hmget key dictKeys) >>= \case
     Left err -> pure $ Left err
