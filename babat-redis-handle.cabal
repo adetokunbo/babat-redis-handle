@@ -57,6 +57,7 @@ test-suite test-specs
   build-depends:    base
                   , QuickCheck
                   , babat-redis-handle
+                  , benri-hspec
                   , bytestring
                   , containers
                   , hspec                   >= 2.1
