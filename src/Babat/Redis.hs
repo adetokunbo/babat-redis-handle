@@ -17,3 +17,4 @@ module Babat.Redis (
 ) where
 
 import Babat.Redis.FromEnv
+

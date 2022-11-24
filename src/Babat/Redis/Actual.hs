@@ -122,10 +122,10 @@ disabledRedisUrl = "redis://use-the-fake"
 
 
 data InnerHandle = InnerHandle
-  { -- | The connection to redis
-    ihConnection :: !Connection
-  , -- | The expiry period
-    ihDefaultExpiry :: !Integer
+  { ihConnection :: !Connection
+  -- ^ The connection to redis
+  , ihDefaultExpiry :: !Integer
+  -- ^ The expiry period
   }
 
 
