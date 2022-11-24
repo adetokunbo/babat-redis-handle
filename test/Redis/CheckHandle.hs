@@ -47,6 +47,11 @@ checkHandle = do
       endsRight_ $ hSaveValue (fHandle f) key1 "changed"
       hLoadValue (fHandle f) key1 `endsRight` Just "changed"
 
+    it "should delete matching keys correctly " $ \f -> do
+      hLoadValue (fHandle f) key2 `endsRight` Just simple2
+      endsRight_ $ hDeleteMatchingKeys (fHandle f) "*2"
+      hLoadValue (fHandle f) key2 `endsRight` Nothing
+
     it "should delete ok" $ \f -> do
       hDeleteKeys (fHandle f) [key1] `endsRight` ()
       hLoadValue (fHandle f) key1 `endsRight` Nothing
@@ -116,6 +121,7 @@ data Fixture a = Fixture
 setupFixture :: Handle IO -> IO (Fixture ())
 setupFixture h = do
   orThrowHTS $ hSaveValue h key1 simple1
+  orThrowHTS $ hSaveValue h key2 simple2
   orThrowHTS $ hSaveDict h mKey1 d1
   pure $ Fixture h ()
 
