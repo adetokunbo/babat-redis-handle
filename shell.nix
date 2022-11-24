@@ -5,22 +5,15 @@ in
     # Builds a Hoogle documentation index of all dependencies,
     # and provides a "hoogle" command to search the index.
     withHoogle = true;
-    inherit (project) index-state;
 
     # Some common tools can be added with the `tools` argument
     tools = {
-      cabal = "3.6.2.0";
-      hlint = "latest"; # Selects the latest version in the hackage.nix snapshot
+      cabal = "latest";
       haskell-language-server = "latest";
       ghcid = "latest";
-      fourmolu = {
-        version = "latest";
-        modules = [
-          ({ lib, ... }: {
-            options.nonReinstallablePkgs = lib.mkOption { apply = lib.remove "Cabal"; };
-          })
-        ];
-      };
+      fourmolu = "latest";
+      cabal-fmt = "latest";
+      hlint = "3.4.1";  # using a specific version, at this nix pin latest does not build
     };
     # See overlays/tools.nix for more details
 
