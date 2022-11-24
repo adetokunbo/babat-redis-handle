@@ -20,9 +20,11 @@ module Babat.Redis.Mem (
 
 import Babat.Redis.Types
 import Control.Monad.IO.Unlift (MonadIO, MonadUnliftIO, liftIO)
+import Data.ByteString.Lazy (fromStrict)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Numeric.Natural (Natural)
+import Redis.Glob (matches)
 import UnliftIO.STM (
   STM,
   TVar,
@@ -225,8 +227,7 @@ hDeleteMatchingKeys' ::
   RemoteKey ->
   m (Either HTSException ())
 hDeleteMatchingKeys' var patt = withFakeHash' var $ \values -> do
-  let matches' _k _key = False -- TODO: needs implementing!
-      pred' = \k _ -> not $ k `matches'` patt
+  let pred' = \k _ -> not $ fromStrict k `matches` fromStrict patt
   writeTVar var (Map.filterWithKey pred' values, False)
   pure $ Right ()
 
