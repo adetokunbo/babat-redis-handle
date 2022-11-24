@@ -29,7 +29,8 @@ import Redis.CheckHandle
 spec :: Spec
 spec =
   describe "Using the Catalog module" $
-    beforeAll (new >>= setupFixture) $ afterAll closeFixture checkSome
+    beforeAll (new >>= setupFixture) $
+      afterAll closeFixture checkSome
 
 
 checkSome :: SpecWith (Fixture a)

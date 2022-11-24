@@ -23,4 +23,5 @@ import Redis.CheckHandle (
 spec :: Spec
 spec =
   describe "Using the Mem handle" $
-    beforeAll (new >>= setupFixture) $ afterAll closeFixture checkHandle
+    beforeAll (new >>= setupFixture) $
+      afterAll closeFixture checkHandle

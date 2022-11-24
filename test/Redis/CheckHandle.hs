@@ -12,14 +12,6 @@ module Redis.CheckHandle (
   checkHandle,
   orThrowHTS,
   throwHTS,
-  endsJust_,
-  endsJust,
-  endsLeft,
-  endsLeft_,
-  endsRight,
-  endsRight_,
-  endsThen,
-  endsNothing,
 
   -- * Fixture support
   Fixture (..),
@@ -28,6 +20,7 @@ module Redis.CheckHandle (
 
   -- * module re-eports
   module Test.Hspec,
+  module Test.Hspec.Benri,
 ) where
 
 import Babat.Redis.Mem
@@ -35,6 +28,7 @@ import Control.Exception (throwIO)
 import qualified Data.Map.Strict as Map
 import Numeric.Natural (Natural)
 import Test.Hspec
+import Test.Hspec.Benri
 
 
 checkHandle :: SpecWith (Fixture a)
@@ -157,72 +151,3 @@ throwHTS = throwIO . userError . show
 
 orThrowHTS :: IO (Either HTSException ()) -> IO ()
 orThrowHTS action = action >>= either throwHTS pure
-
-
-{- |
- @action \`endsRight\` @expected@ sets the expectation that @action@
- returns @Right@ @expected@.
--}
-endsRight :: (HasCallStack, Show a, Eq a, Show b, Eq b) => IO (Either a b) -> b -> Expectation
-action `endsRight` expected = action >>= (`shouldBe` Right expected)
-
-
-{- |
- @action \`endsLeft\` @expected@ sets the expectation that @action@
- returns @Left@ @expected@.
--}
-endsLeft ::
-  (HasCallStack, Show a, Eq a, Show b, Eq b) => IO (Either a b) -> a -> Expectation
-action `endsLeft` expected = action >>= (`shouldBe` Left expected)
-
-
-{- |
- @action \`endsJust\`  @expected@ sets the expectation that @action@
- returns @Just@ @expected@.
--}
-endsJust ::
-  (HasCallStack, Show a, Eq a) => IO (Maybe a) -> a -> Expectation
-action `endsJust` expected = action >>= (`shouldBe` Just expected)
-
-
-{- |
- @action \`endsNothing\` expected@ sets the expectation that @action@
- returns @Nothing@.
--}
-endsNothing :: (Show a, Eq a) => IO (Maybe a) -> IO ()
-endsNothing action = action >>= (`shouldBe` Nothing)
-
-
-{- |
- @action \`endsRight_\` sets the expectation that @action@
- returns @Right _@.
--}
-endsRight_ :: (Show b1, Show b2) => IO (Either b1 b2) -> IO ()
-endsRight_ action = endsThen action $ either (const False) (const True)
-
-
-{- |
- @action \`endsLeft_\` sets the expectation that @action@
- returns @Left _@.
--}
-endsLeft_ :: (Show b1, Show b2) => IO (Either b1 b2) -> IO ()
-endsLeft_ action = endsThen action $ either (const True) (const False)
-
-
-{- |
- @action \`endsJust_\` sets the expectation that @action@
- returns @Just _@.
--}
-endsJust_ :: (Show a) => IO (Maybe a) -> IO ()
-endsJust_ action = endsThen action $ maybe False (const True)
-
-
-{- |
- @action \`endsThen\` expected@ sets the expectation that @action@
- returns @expected@.
--}
-endsThen :: (Show a) => IO a -> (a -> Bool) -> IO ()
-endsThen action p = action >>= (`shouldSatisfy` p)
-
-
-infix 1 `endsLeft`, `endsRight`, `endsThen`, `endsJust`

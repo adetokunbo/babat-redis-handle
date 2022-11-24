@@ -31,7 +31,8 @@ import Test.Hspec.TmpProc
 spec :: Spec
 spec =
   tdescribe "Using an Actual handle" $
-    beforeAll setupHandles $ afterAll closeHandles checkHandle
+    beforeAll setupHandles $
+      afterAll closeHandles checkHandle
 
 
 setupHandles :: IO (Fixture (HList '[ProcHandle TmpRedis]))
